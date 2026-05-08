@@ -1,0 +1,1223 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Jadu Tone Pad</title>
+<link rel="icon" type="image/png" href="photoa/fAV.png" />
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    background: #02020a;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    font-family: 'Segoe UI Historic', 'Noto Sans Egyptian Hieroglyphs', 'Aegyptus', serif;
+    position: relative;
+    cursor: default;
+  }
+
+  /* Real nebula photo (rotated 90° to landscape) */
+  .space-bg {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    width: 100vh;
+    height: 100vw;
+    background-image: url('photoa/PIA08653~orig.jpg');
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+    transform: translate(-50%, -50%) rotate(90deg) scale(1.05);
+    z-index: 0;
+    filter: brightness(0.62) saturate(1.08) contrast(1.05);
+    will-change: transform;
+    animation: spaceBgDrift 90s ease-in-out infinite alternate;
+  }
+  @keyframes spaceBgDrift {
+    0%   { transform: translate(-50%, -50%) rotate(90deg)   scale(1.05); }
+    100% { transform: translate(-50%, -50%) rotate(90.6deg) scale(1.12); }
+  }
+
+  /* Subtle additional nebula tint over the photo */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: -10%;
+    background:
+      radial-gradient(ellipse 35% 25% at 20% 30%, rgba(60, 30, 120, 0.18) 0%, transparent 70%),
+      radial-gradient(ellipse 40% 30% at 80% 72%, rgba(30, 60, 160, 0.15) 0%, transparent 70%);
+    filter: blur(60px);
+    animation: nebula 75s ease-in-out infinite alternate;
+    pointer-events: none;
+    z-index: 0;
+  }
+  @keyframes nebula {
+    0%   { transform: rotate(0deg) scale(1) translate(0, 0); }
+    100% { transform: rotate(6deg) scale(1.12) translate(2%, -2%); }
+  }
+
+  /* Soft outer vignette — keeps UI focused while showing photo */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.78) 100%);
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  /* Parallax starfield host (3 depth layers) */
+  .starfield-host {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    overflow: hidden;
+  }
+  .starfield {
+    position: absolute;
+    inset: -8%;
+    transition: transform 0.6s cubic-bezier(0.2, 0.7, 0.3, 1);
+    will-change: transform;
+  }
+  .star {
+    position: absolute;
+    background: #fff;
+    border-radius: 50%;
+    animation: twinkle var(--dur, 3s) ease-in-out infinite;
+    will-change: opacity, transform;
+  }
+  @keyframes twinkle {
+    0%, 100% { opacity: var(--baseOp, 0.7); transform: scale(1); }
+    50%      { opacity: calc(var(--baseOp, 0.7) * 0.25); transform: scale(0.55); }
+  }
+
+  /* Hidden SVG defs */
+  .svg-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
+
+  /* Milky Way diagonal band */
+  .milkyway {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    background: linear-gradient(112deg,
+      transparent 32%,
+      rgba(190, 210, 255, 0.04) 40%,
+      rgba(220, 200, 255, 0.09) 47%,
+      rgba(255, 230, 210, 0.075) 52%,
+      rgba(220, 200, 255, 0.08) 57%,
+      rgba(180, 200, 255, 0.04) 65%,
+      transparent 72%);
+    filter: blur(6px);
+    opacity: 0.85;
+  }
+
+  /* Distant galaxy spiral (corner) */
+  .galaxy {
+    position: fixed;
+    bottom: -180px;
+    left: -180px;
+    width: 480px;
+    height: 480px;
+    border-radius: 50%;
+    background:
+      radial-gradient(circle at 50% 50%, rgba(255, 240, 220, 0.32) 0%, rgba(255, 200, 150, 0.18) 4%, transparent 9%),
+      conic-gradient(from 0deg at 50% 50%,
+        rgba(180, 100, 200, 0) 0deg,
+        rgba(180, 100, 200, 0.16) 35deg,
+        rgba(180, 100, 200, 0) 70deg,
+        rgba(140, 180, 255, 0.18) 130deg,
+        rgba(140, 180, 255, 0) 165deg,
+        rgba(255, 200, 150, 0.12) 230deg,
+        rgba(255, 200, 150, 0) 265deg,
+        rgba(160, 120, 200, 0.13) 320deg,
+        rgba(160, 120, 200, 0) 355deg);
+    filter: blur(14px);
+    -webkit-mask: radial-gradient(circle, #000 0%, #000 32%, transparent 68%);
+            mask: radial-gradient(circle, #000 0%, #000 32%, transparent 68%);
+    pointer-events: none;
+    z-index: 1;
+    animation: galaxySpin 240s linear infinite;
+    opacity: 0.55;
+  }
+  @keyframes galaxySpin { to { transform: rotate(360deg); } }
+
+  /* Distant planet (subtle, top-right) */
+  .planet {
+    position: fixed;
+    top: 8%;
+    right: -60px;
+    width: 130px;
+    height: 130px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 28%,
+      #6e5e92 0%,
+      #3a2e58 35%,
+      #1a1230 70%,
+      #06040c 100%);
+    box-shadow:
+      inset -10px -8px 20px rgba(0,0,0,0.65),
+      inset 6px 4px 12px rgba(180, 160, 220, 0.18),
+      0 0 50px rgba(120, 80, 180, 0.18);
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0.7;
+    animation: planetFloat 28s ease-in-out infinite alternate;
+  }
+  @keyframes planetFloat {
+    0%   { transform: translate(0, 0); }
+    100% { transform: translate(-12px, 18px); }
+  }
+
+  /* Drifting asteroids — SVG instances */
+  .asteroids {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    overflow: hidden;
+  }
+  .asteroid {
+    position: absolute;
+    animation: asteroidDrift linear infinite;
+    will-change: transform;
+    user-select: none;
+    filter: drop-shadow(0 0 6px rgba(0, 0, 0, 0.5));
+  }
+  .asteroid svg { width: 100%; height: 100%; display: block; animation: asteroidSpin linear infinite; }
+  @keyframes asteroidDrift {
+    0%   { transform: translateX(0);     opacity: 0; }
+    8%   { opacity: var(--op, 0.55); }
+    92%  { opacity: var(--op, 0.55); }
+    100% { transform: translateX(135vw); opacity: 0; }
+  }
+  @keyframes asteroidSpin {
+    0%   { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  /* Shooting stars */
+  .shooters { position: fixed; inset: 0; pointer-events: none; z-index: 2; overflow: hidden; }
+  .shooter {
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    background: #fff;
+    border-radius: 50%;
+    box-shadow: 0 0 6px #fff, 0 0 14px rgba(180, 220, 255, 0.7);
+    animation: shoot 1.4s cubic-bezier(0.2, 0.7, 0.5, 1) forwards;
+  }
+  .shooter::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 1px;
+    width: 90px;
+    height: 1px;
+    background: linear-gradient(to left, rgba(255,255,255,0.95), rgba(180, 220, 255, 0.4), transparent);
+    transform-origin: right center;
+    transform: rotate(28deg);
+    filter: blur(0.4px);
+  }
+  @keyframes shoot {
+    0%   { transform: translate(0, 0) scale(1);   opacity: 0; }
+    10%  { opacity: 1; }
+    100% { transform: translate(-340px, 180px) scale(0.6); opacity: 0; }
+  }
+
+  /* Spark/particle layer (used for click sparks only now) */
+  .particles { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 6; }
+
+  /* Cosmic title */
+  .title {
+    position: relative;
+    z-index: 3;
+    margin: 0 0 24px 0;
+    font-family: 'Cinzel', 'Georgia', 'Segoe UI Historic', serif;
+    font-weight: 700;
+    font-style: italic;
+    font-size: clamp(2.4rem, 6vw, 4.2rem);
+    letter-spacing: 0.04em;
+    line-height: 1;
+    color: transparent;
+    background: linear-gradient(95deg,
+      #b3d4ff 0%,
+      #ffffff 18%,
+      #c9b4ff 38%,
+      #ffd9b3 58%,
+      #ffffff 78%,
+      #b3d4ff 100%);
+    background-size: 220% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    text-shadow:
+      0 0 18px rgba(180, 200, 255, 0.55),
+      0 0 38px rgba(140, 90, 220, 0.35),
+      0 0 70px rgba(80, 130, 220, 0.25);
+    filter: drop-shadow(0 2px 14px rgba(120, 140, 255, 0.35));
+    animation: titleShine 9s linear infinite, titleFloat 6s ease-in-out infinite;
+    user-select: none;
+    text-align: center;
+  }
+  @keyframes titleShine {
+    0%   { background-position: 0% 50%; }
+    100% { background-position: 220% 50%; }
+  }
+  @keyframes titleFloat {
+    0%, 100% { transform: translateY(0) rotate(-0.3deg); }
+    50%      { transform: translateY(-4px) rotate(0.3deg); }
+  }
+
+  .pad {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 16px;
+    max-width: 720px;
+    width: 100%;
+    position: relative;
+    z-index: 3;
+  }
+
+  .key {
+    aspect-ratio: 1;
+    border: none;
+    border-radius: 22%;
+    background: radial-gradient(circle at 30% 25%, #ff5566 0%, #c91020 50%, #5e0010 100%);
+    color: #ffe8a0;
+    cursor: pointer;
+    transition: transform 0.12s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.12s ease, background 0.12s ease;
+    box-shadow:
+      0 14px 28px rgba(214, 16, 32, 0.4),
+      0 6px 0 #4a000a,
+      0 0 26px rgba(255, 100, 60, 0.28),
+      inset 0 2px 0 rgba(255, 200, 200, 0.5),
+      inset 0 -4px 10px rgba(0, 0, 0, 0.42);
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    font-family: inherit;
+    overflow: visible;
+    animation: keyPulse 5s ease-in-out infinite;
+  }
+  .key:nth-child(2n) { animation-delay: 1.1s; }
+  .key:nth-child(3n) { animation-delay: 2.3s; }
+  .key:nth-child(5n) { animation-delay: 3.5s; }
+  @keyframes keyPulse {
+    0%, 100% { filter: brightness(1) saturate(1); }
+    50%      { filter: brightness(1.18) saturate(1.2); }
+  }
+
+  .key:disabled { opacity: 0.4; cursor: not-allowed; filter: saturate(0.4); animation: none; }
+  .key:not(:disabled):hover {
+    transform: translateY(-3px);
+    box-shadow:
+      0 18px 36px rgba(214, 16, 32, 0.55),
+      0 9px 0 #4a000a,
+      0 0 38px rgba(255, 120, 60, 0.45),
+      inset 0 2px 0 rgba(255, 200, 200, 0.55),
+      inset 0 -4px 10px rgba(0, 0, 0, 0.4);
+  }
+  .key:not(:disabled):active, .key.active {
+    transform: translateY(5px);
+    background: radial-gradient(circle at 30% 25%, #ffaabb 0%, #c91030 30%, #4d000a 100%);
+    box-shadow:
+      0 4px 10px rgba(214, 16, 32, 0.5),
+      0 1px 0 #4a000a,
+      0 0 70px rgba(255, 200, 100, 0.75),
+      inset 0 2px 4px rgba(0, 0, 0, 0.55);
+  }
+  .key .glyph {
+    font-size: 3rem;
+    line-height: 1;
+    filter: drop-shadow(0 2px 3px rgba(0,0,0,0.5));
+    text-shadow:
+      0 0 6px rgba(255, 220, 140, 0.6),
+      0 0 14px rgba(255, 140, 60, 0.4);
+    animation: glyphPulse 4s ease-in-out infinite;
+    position: relative;
+    z-index: 2;
+    will-change: text-shadow, transform;
+  }
+  @keyframes glyphPulse {
+    0%, 100% { text-shadow: 0 0 6px rgba(255, 220, 140, 0.5), 0 0 14px rgba(255, 140, 60, 0.3); }
+    50%      { text-shadow: 0 0 14px rgba(255, 230, 160, 0.95), 0 0 28px rgba(255, 140, 60, 0.6); }
+  }
+
+  /* Sparks burst on key press — JS-spawned */
+  .spark {
+    position: fixed;
+    color: rgba(255, 220, 140, 0.95);
+    text-shadow: 0 0 8px rgba(255, 150, 50, 0.95), 0 0 18px rgba(255, 80, 30, 0.65);
+    pointer-events: none;
+    z-index: 6;
+    animation: sparkFly 0.8s cubic-bezier(0.15, 0.6, 0.4, 1) forwards;
+    will-change: transform, opacity;
+  }
+  @keyframes sparkFly {
+    0%   { transform: translate(-50%, -50%) scale(0.4); opacity: 1; }
+    100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.15); opacity: 0; }
+  }
+
+  /* Creator credit — bottom-right, starlit script */
+  .credit {
+    position: fixed;
+    right: 18px;
+    bottom: 14px;
+    z-index: 5;
+    margin: 0;
+    font-size: 0.78rem;
+    letter-spacing: 0.22em;
+    color: rgba(190, 210, 255, 0.62);
+    font-family: 'Georgia', 'Cinzel', serif;
+    font-style: italic;
+    font-weight: 300;
+    text-shadow:
+      0 0 6px rgba(140, 180, 255, 0.55),
+      0 0 14px rgba(80, 130, 220, 0.4),
+      0 0 26px rgba(60, 100, 200, 0.25);
+    animation: creditFlicker 6s ease-in-out infinite;
+    text-align: right;
+    user-select: none;
+    pointer-events: none;
+  }
+  @keyframes creditFlicker {
+    0%, 100% { opacity: 0.62; }
+    50%      { opacity: 0.95; }
+  }
+
+  /* Click ripple */
+  .key .ripple {
+    position: absolute;
+    inset: -8%;
+    border-radius: inherit;
+    background: radial-gradient(circle at center, rgba(255, 230, 160, 0.85) 0%, rgba(255, 100, 40, 0.4) 32%, transparent 72%);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 1;
+  }
+  .key.fire .ripple { animation: fire 0.75s ease-out; }
+  @keyframes fire {
+    0%   { opacity: 0.95; transform: scale(0.3); }
+    100% { opacity: 0; transform: scale(1.7); }
+  }
+
+  .controls {
+    margin-top: 28px;
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    z-index: 3;
+  }
+  .reverb-row {
+    display: flex; align-items: center;
+    padding: 8px 16px;
+    background: rgba(20, 0, 10, 0.55);
+    border: 1px solid rgba(255, 100, 60, 0.25);
+    border-radius: 30px;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    box-shadow: 0 0 22px rgba(255, 80, 40, 0.18), inset 0 1px 0 rgba(255, 180, 100, 0.1);
+  }
+  .reverb-row input[type=range] {
+    width: 140px;
+    accent-color: #ff5050;
+    filter: drop-shadow(0 0 5px rgba(255, 100, 50, 0.6));
+    background: transparent;
+  }
+
+  /* Status: hidden by default; shown only on error */
+  #status {
+    display: none;
+    position: fixed;
+    bottom: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 8px 16px;
+    border-radius: 10px;
+    background: rgba(60, 0, 10, 0.9);
+    border: 1px solid rgba(255, 80, 80, 0.55);
+    color: #fff;
+    font-size: 0.85rem;
+    z-index: 100;
+    max-width: 92vw;
+    text-align: center;
+  }
+  #status.error { display: block; }
+
+  /* Mobile: 2 column × 5 row tall (lomba lombi) layout */
+  @media (max-width: 600px) {
+    body { padding: 10px; justify-content: center; }
+    .title { font-size: 2rem; margin-bottom: 12px; }
+    .pad {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      /* Width derived from available height (minus title + controls + credit) */
+      max-width: min(58vw, calc((100vh - 210px) * 2 / 5 + 8px));
+    }
+    .key { border-radius: 22%; }
+    .key .glyph { font-size: 1.9rem; }
+    .controls { margin-top: 14px; gap: 8px; }
+    .reverb-row { padding: 5px 10px; border-radius: 22px; }
+    .reverb-row input[type=range] { width: 100px; }
+    .credit { font-size: 0.68rem; letter-spacing: 0.18em; right: 10px; bottom: 8px; }
+  }
+  @media (max-width: 400px) {
+    .title { font-size: 1.7rem; margin-bottom: 10px; }
+    .pad { gap: 6px; max-width: min(54vw, calc((100vh - 200px) * 2 / 5 + 6px)); }
+    .key .glyph { font-size: 1.55rem; }
+    .reverb-row input[type=range] { width: 80px; }
+  }
+  @media (orientation: landscape) and (max-height: 520px) {
+    /* Landscape phones: revert to wide grid since vertical space is tight */
+    .title { font-size: 1.4rem; margin-bottom: 6px; }
+    .pad {
+      grid-template-columns: repeat(5, 1fr);
+      max-width: min(720px, 80vh);
+    }
+    .key .glyph { font-size: 1.3rem; }
+    .controls { margin-top: 6px; }
+    .credit { font-size: 0.62rem; right: 8px; bottom: 6px; }
+  }
+</style>
+</head>
+<body>
+  <!-- Shared SVG defs (gradients reused by all asteroid instances) -->
+  <svg class="svg-defs" aria-hidden="true" focusable="false">
+    <defs>
+      <radialGradient id="astGrad1" cx="34%" cy="28%">
+        <stop offset="0%"  stop-color="#bda589"/>
+        <stop offset="35%" stop-color="#7a6850"/>
+        <stop offset="72%" stop-color="#3a2f24"/>
+        <stop offset="100%" stop-color="#0d0805"/>
+      </radialGradient>
+      <radialGradient id="astGrad2" cx="32%" cy="32%">
+        <stop offset="0%"  stop-color="#a89888"/>
+        <stop offset="42%" stop-color="#6b5a48"/>
+        <stop offset="100%" stop-color="#13100a"/>
+      </radialGradient>
+      <radialGradient id="astGrad3" cx="40%" cy="25%">
+        <stop offset="0%"  stop-color="#cdb89a"/>
+        <stop offset="30%" stop-color="#8a7558"/>
+        <stop offset="70%" stop-color="#3e3024"/>
+        <stop offset="100%" stop-color="#100a06"/>
+      </radialGradient>
+      <radialGradient id="astGrad4" cx="38%" cy="30%">
+        <stop offset="0%"  stop-color="#9aa5b3"/>
+        <stop offset="40%" stop-color="#525c6a"/>
+        <stop offset="100%" stop-color="#0c1018"/>
+      </radialGradient>
+      <radialGradient id="planetRing" cx="50%" cy="50%" r="50%">
+        <stop offset="0%"  stop-color="#5a4a78"/>
+        <stop offset="40%" stop-color="#2c2244"/>
+        <stop offset="70%" stop-color="#3a3060"/>
+        <stop offset="100%" stop-color="#0a0820"/>
+      </radialGradient>
+    </defs>
+  </svg>
+  <div class="space-bg"></div>
+  <div class="milkyway"></div>
+  <div class="galaxy"></div>
+  <div class="planet"></div>
+  <div class="particles" id="particles"></div>
+  <div class="starfield-host" id="starfield"></div>
+  <div class="asteroids" id="asteroids"></div>
+  <div class="shooters" id="shooters"></div>
+  <h1 class="title">JaDDDDuuuuu</h1>
+  <div class="pad" id="pad"></div>
+  <div class="controls">
+    <div class="reverb-row">
+      <input type="range" id="reverb" min="0" max="100" value="45" aria-label="Reverb" />
+    </div>
+    <div class="reverb-row">
+      <input type="range" id="delay" min="0" max="100" value="30" aria-label="Delay" />
+    </div>
+  </div>
+  <div class="credit">Zasif-bin-islam</div>
+  <div id="status"></div>
+
+<script>
+(function () {
+  const AUDIO_URL = 'jadu10.WAV';
+  const NUM_TONES = 10;
+  const KEYS = ['1','2','3','4','5','6','7','8','9','0'];
+  const GLYPHS = ['𓂀','𓋹','𓊽','𓅓','𓆣','𓃭','𓀀','𓄿','𓉐','𓇋'];
+
+  const statusEl = document.getElementById('status');
+  const padEl = document.getElementById('pad');
+  let audioCtx = null;
+  let audioBuffer = null;
+  let toneRanges = []; // [{start, end}] - shuffled, indexed by key position (0..9)
+  let activeSources = new Set();
+  let dryGain = null, wetGain = null, convolver = null, masterGain = null;
+  let delayNode = null, delayGain = null, delayFeedback = null;
+  let reverbAmount = 0.45;
+  let delayAmount = 0.30;
+
+  function setStatus(msg, type='') {
+    // Page থেকে সব text সরানো — শুধু error হলে minimal toast দেখাই, নাহলে console এ log।
+    if (type === 'error') {
+      statusEl.textContent = msg;
+      statusEl.className = 'error';
+    } else {
+      statusEl.textContent = '';
+      statusEl.className = '';
+    }
+    console.log('[jadu]', msg);
+  }
+
+  function buildPad() {
+    padEl.innerHTML = '';
+    KEYS.forEach((k, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'key';
+      btn.dataset.index = i;
+      btn.disabled = true;
+      btn.setAttribute('aria-label', `Tone ${i+1}`);
+      btn.innerHTML = `<span class="ripple"></span><span class="glyph">${GLYPHS[i]}</span>`;
+      btn.addEventListener('mousedown', (e) => { e.preventDefault(); playTone(i); flash(btn); });
+      btn.addEventListener('touchstart', (e) => { e.preventDefault(); playTone(i); flash(btn); }, {passive:false});
+      padEl.appendChild(btn);
+    });
+  }
+
+  function flash(btn) {
+    btn.classList.add('active');
+    setTimeout(() => btn.classList.remove('active'), 150);
+    btn.classList.remove('fire');
+    void btn.offsetWidth;
+    btn.classList.add('fire');
+    setTimeout(() => btn.classList.remove('fire'), 800);
+    spawnSparks(btn);
+  }
+
+  function spawnSparks(btn) {
+    const layer = document.getElementById('particles');
+    if (!layer) return;
+    const rect = btn.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const symbols = ['✦','✧','˖','*','·'];
+    const n = 10;
+    for (let i = 0; i < n; i++) {
+      const s = document.createElement('span');
+      s.className = 'spark';
+      s.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+      const angle = (Math.PI * 2 * i / n) + (Math.random() - 0.5) * 0.6;
+      const dist = 50 + Math.random() * 70;
+      s.style.left = cx + 'px';
+      s.style.top = cy + 'px';
+      s.style.setProperty('--dx', Math.cos(angle) * dist + 'px');
+      s.style.setProperty('--dy', Math.sin(angle) * dist + 'px');
+      s.style.fontSize = (0.7 + Math.random() * 0.7) + 'rem';
+      const hue = 20 + Math.random() * 30;
+      s.style.color = `hsla(${hue}, 90%, 65%, 0.95)`;
+      layer.appendChild(s);
+      setTimeout(() => s.remove(), 850);
+    }
+  }
+
+  function enablePad() {
+    document.querySelectorAll('.key').forEach(b => b.disabled = false);
+  }
+
+  // Detect tones by finding silence gaps (RMS-based)
+  function detectTones(buffer) {
+    const sampleRate = buffer.sampleRate;
+    const channelData = buffer.getChannelData(0);
+    const windowSize = Math.floor(sampleRate * 0.02); // 20ms windows
+    const totalWindows = Math.floor(channelData.length / windowSize);
+
+    // RMS for each window
+    const rms = new Float32Array(totalWindows);
+    let maxRms = 0;
+    for (let w = 0; w < totalWindows; w++) {
+      let sum = 0;
+      const off = w * windowSize;
+      for (let i = 0; i < windowSize; i++) {
+        const s = channelData[off + i];
+        sum += s * s;
+      }
+      const r = Math.sqrt(sum / windowSize);
+      rms[w] = r;
+      if (r > maxRms) maxRms = r;
+    }
+
+    // Threshold = 4% of peak (low so within-tone dips don't split)
+    const threshold = maxRms * 0.04;
+    const minToneWindows = Math.max(2, Math.floor(0.08 / 0.02)); // ≥80ms
+    const minSilenceWindows = Math.max(2, Math.floor(0.4 / 0.02)); // ≥400ms gap (user has 1-2s)
+
+    // Find contiguous active regions
+    const regions = [];
+    let inTone = false, start = 0, silenceCount = 0;
+    for (let w = 0; w < totalWindows; w++) {
+      const active = rms[w] > threshold;
+      if (active) {
+        if (!inTone) { inTone = true; start = w; }
+        silenceCount = 0;
+      } else if (inTone) {
+        silenceCount++;
+        if (silenceCount >= minSilenceWindows) {
+          const end = w - silenceCount;
+          if (end - start >= minToneWindows) {
+            regions.push({startW: start, endW: end});
+          }
+          inTone = false;
+          silenceCount = 0;
+        }
+      }
+    }
+    if (inTone) {
+      const end = totalWindows - silenceCount;
+      if (end - start >= minToneWindows) regions.push({startW: start, endW: end});
+    }
+
+    // Convert to seconds, pad slightly
+    const ranges = regions.map(r => ({
+      start: Math.max(0, (r.startW * windowSize) / sampleRate - 0.02),
+      end: Math.min(buffer.duration, (r.endW * windowSize) / sampleRate + 0.05)
+    }));
+
+    return ranges;
+  }
+
+  function shuffle(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  // ---- Spectral noise reduction (background cricket/night-sound removal) ----
+  // Iterative radix-2 Cooley-Tukey FFT.
+  function fft(re, im) {
+    const n = re.length;
+    for (let i = 1, j = 0; i < n; i++) {
+      let bit = n >> 1;
+      while (j & bit) { j ^= bit; bit >>= 1; }
+      j ^= bit;
+      if (i < j) {
+        let tr = re[i]; re[i] = re[j]; re[j] = tr;
+        let ti = im[i]; im[i] = im[j]; im[j] = ti;
+      }
+    }
+    for (let len = 2; len <= n; len <<= 1) {
+      const half = len >> 1;
+      const ang = -2 * Math.PI / len;
+      const wr = Math.cos(ang), wi = Math.sin(ang);
+      for (let i = 0; i < n; i += len) {
+        let cr = 1, ci = 0;
+        for (let k = 0; k < half; k++) {
+          const a = i + k, b = a + half;
+          const tr = cr * re[b] - ci * im[b];
+          const ti = cr * im[b] + ci * re[b];
+          re[b] = re[a] - tr; im[b] = im[a] - ti;
+          re[a] += tr; im[a] += ti;
+          const nr = cr * wr - ci * wi;
+          ci = cr * wi + ci * wr;
+          cr = nr;
+        }
+      }
+    }
+  }
+  function ifft(re, im) {
+    const n = re.length;
+    for (let i = 0; i < n; i++) im[i] = -im[i];
+    fft(re, im);
+    for (let i = 0; i < n; i++) { re[i] /= n; im[i] = -im[i] / n; }
+  }
+  function hannWindow(N) {
+    const w = new Float32Array(N);
+    for (let i = 0; i < N; i++) w[i] = 0.5 - 0.5 * Math.cos(2 * Math.PI * i / (N - 1));
+    return w;
+  }
+  function findLongestSilence(tones, totalDuration) {
+    if (!tones.length) return { start: 0, end: Math.min(0.3, totalDuration) };
+    const t = [...tones].sort((a, b) => a.start - b.start);
+    let best = null, bestLen = 0;
+    let prev = 0;
+    for (const tone of t) {
+      const len = tone.start - prev;
+      if (len > bestLen) { bestLen = len; best = { start: prev, end: tone.start }; }
+      prev = tone.end;
+    }
+    const tail = totalDuration - prev;
+    if (tail > bestLen) best = { start: prev, end: totalDuration };
+    return best;
+  }
+  function reduceNoise(buffer, regions) {
+    const sr = buffer.sampleRate;
+    const FRAME = 2048;
+    const HOP = 512;
+    const OVER = 1.8;     // over-subtraction (1.5–2 sweet spot)
+    const FLOOR = 0.05;   // residual floor (avoids musical noise)
+
+    const noise = findLongestSilence(regions, buffer.duration);
+    if (!noise || (noise.end - noise.start) * sr < FRAME * 2) return false;
+
+    const win = hannWindow(FRAME);
+    const re = new Float32Array(FRAME);
+    const im = new Float32Array(FRAME);
+
+    for (let ch = 0; ch < buffer.numberOfChannels; ch++) {
+      const data = buffer.getChannelData(ch);
+
+      // Average magnitude spectrum of the noise region
+      const noiseMag = new Float32Array(FRAME / 2 + 1);
+      let nFrames = 0;
+      const pad = Math.floor(0.04 * sr);
+      const nStart = Math.max(0, Math.floor(noise.start * sr) + pad);
+      const nEnd = Math.min(data.length, Math.floor(noise.end * sr) - pad);
+
+      for (let off = nStart; off + FRAME <= nEnd; off += HOP) {
+        for (let i = 0; i < FRAME; i++) re[i] = data[off + i] * win[i];
+        im.fill(0);
+        fft(re, im);
+        for (let k = 0; k <= FRAME / 2; k++) {
+          noiseMag[k] += Math.sqrt(re[k] * re[k] + im[k] * im[k]);
+        }
+        nFrames++;
+      }
+      if (nFrames === 0) continue;
+      for (let k = 0; k < noiseMag.length; k++) noiseMag[k] /= nFrames;
+
+      // Process each tone region: spectral subtraction with overlap-add
+      for (const tone of regions) {
+        const tStart = Math.max(0, Math.floor(tone.start * sr));
+        const tEnd = Math.min(data.length, Math.floor(tone.end * sr));
+        const len = tEnd - tStart;
+        if (len < FRAME) continue;
+
+        const out = new Float32Array(len);
+        const winSum = new Float32Array(len);
+
+        for (let off = 0; off + FRAME <= len; off += HOP) {
+          for (let i = 0; i < FRAME; i++) re[i] = data[tStart + off + i] * win[i];
+          im.fill(0);
+          fft(re, im);
+
+          for (let k = 0; k <= FRAME / 2; k++) {
+            const r = re[k], iv = im[k];
+            const mag = Math.sqrt(r * r + iv * iv);
+            const cleanMag = Math.max(mag - OVER * noiseMag[k], FLOOR * noiseMag[k]);
+            const scale = mag > 1e-12 ? cleanMag / mag : 0;
+            re[k] = r * scale;
+            im[k] = iv * scale;
+            if (k > 0 && k < FRAME / 2) {
+              re[FRAME - k] = re[k];
+              im[FRAME - k] = -im[k];
+            }
+          }
+
+          ifft(re, im);
+          for (let i = 0; i < FRAME; i++) {
+            out[off + i] += re[i] * win[i];
+            winSum[off + i] += win[i] * win[i];
+          }
+        }
+
+        for (let i = 0; i < len; i++) {
+          const w = winSum[i];
+          if (w > 1e-6) data[tStart + i] = out[i] / w;
+        }
+      }
+    }
+    return true;
+  }
+
+  function equalSplit(buffer) {
+    const dur = buffer.duration;
+    const seg = dur / NUM_TONES;
+    const out = [];
+    for (let i = 0; i < NUM_TONES; i++) {
+      out.push({ start: i * seg, end: (i + 1) * seg });
+    }
+    return out;
+  }
+
+  function reconcile(detected, buffer) {
+    if (detected.length === NUM_TONES) return detected;
+    if (detected.length > NUM_TONES) {
+      // Keep the NUM_TONES longest regions, sorted by start time
+      const sorted = [...detected].sort((a,b) => (b.end-b.start) - (a.end-a.start)).slice(0, NUM_TONES);
+      sorted.sort((a,b) => a.start - b.start);
+      return sorted;
+    }
+    if (detected.length === 0) return equalSplit(buffer);
+    // Fewer than 10 detected — fall back to equal split
+    return equalSplit(buffer);
+  }
+
+  // Build a synthetic impulse response for a lush hall reverb
+  function buildImpulseResponse(ctx, seconds = 2.6, decay = 2.4) {
+    const rate = ctx.sampleRate;
+    const length = Math.floor(rate * seconds);
+    const ir = ctx.createBuffer(2, length, rate);
+    for (let ch = 0; ch < 2; ch++) {
+      const data = ir.getChannelData(ch);
+      for (let i = 0; i < length; i++) {
+        const t = i / length;
+        // Slight pre-delay shaping + exponential decay envelope
+        const env = Math.pow(1 - t, decay);
+        // Stereo decorrelation: different noise per channel
+        data[i] = (Math.random() * 2 - 1) * env;
+      }
+      // Soft early-reflection bump (~30-80ms)
+      const erStart = Math.floor(rate * 0.025);
+      const erEnd = Math.floor(rate * 0.09);
+      for (let i = erStart; i < erEnd && i < length; i++) {
+        data[i] *= 1.25;
+      }
+    }
+    return ir;
+  }
+
+  function setupAudioGraph() {
+    if (convolver) return; // already built
+
+    // Reverb chain
+    convolver = audioCtx.createConvolver();
+    convolver.buffer = buildImpulseResponse(audioCtx);
+    const preFilter = audioCtx.createBiquadFilter();
+    preFilter.type = 'lowpass';
+    preFilter.frequency.value = 5500;
+    preFilter.Q.value = 0.7;
+    preFilter.connect(convolver);
+
+    // Delay chain (with feedback)
+    delayNode = audioCtx.createDelay(2.0);
+    delayNode.delayTime.value = 0.36;          // ~360ms slap
+    delayFeedback = audioCtx.createGain();
+    delayFeedback.gain.value = 0.42;           // ~3 audible repeats
+    const delayInput = audioCtx.createGain();  // entry point
+    const delayTone = audioCtx.createBiquadFilter();
+    delayTone.type = 'lowpass';
+    delayTone.frequency.value = 4200;          // darker repeats
+    delayInput.connect(delayNode);
+    delayNode.connect(delayTone);
+    delayTone.connect(delayFeedback);
+    delayFeedback.connect(delayNode);          // feedback loop
+
+    // Bus gains
+    dryGain = audioCtx.createGain();
+    wetGain = audioCtx.createGain();
+    delayGain = audioCtx.createGain();
+    masterGain = audioCtx.createGain();
+    masterGain.gain.value = 1.8;     // moderate boost (lower = less limiter pumping)
+
+    dryGain.gain.value = 1 - reverbAmount * 0.5;
+    wetGain.gain.value = reverbAmount;
+    delayGain.gain.value = delayAmount;
+
+    convolver.connect(wetGain);
+    delayNode.connect(delayGain);
+    dryGain.connect(masterGain);
+    wetGain.connect(masterGain);
+    delayGain.connect(masterGain);
+
+    // Limiter: gentle compression, slower attack (no click)
+    const limiter = audioCtx.createDynamicsCompressor();
+    limiter.threshold.value = -10;   // start compressing earlier
+    limiter.knee.value = 12;         // wide soft knee — no abrupt onset
+    limiter.ratio.value = 6;         // gentle, not hard-limit
+    limiter.attack.value = 0.020;    // 20ms — past the click region
+    limiter.release.value = 0.18;
+
+    // Make-up gain after limiter — most of the loudness lives here now
+    const makeup = audioCtx.createGain();
+    makeup.gain.value = 2.4;
+
+    masterGain.connect(limiter);
+    limiter.connect(makeup);
+    makeup.connect(audioCtx.destination);
+
+    setupAudioGraph.input = { dry: dryGain, wetIn: preFilter, delayIn: delayInput };
+  }
+
+  function applyReverbAmount(v) {
+    reverbAmount = Math.max(0, Math.min(1, v));
+    if (dryGain && wetGain) {
+      dryGain.gain.value = 1 - reverbAmount * 0.5;
+      wetGain.gain.value = reverbAmount;
+    }
+  }
+  function applyDelayAmount(v) {
+    delayAmount = Math.max(0, Math.min(1, v));
+    if (delayGain) delayGain.gain.value = delayAmount;
+  }
+
+  function playTone(index) {
+    if (!audioBuffer || !toneRanges[index]) return;
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    setupAudioGraph();
+
+    // Polyphony: never stop previous voices — let them ring with their reverb/delay tail.
+    const r = toneRanges[index];
+    const src = audioCtx.createBufferSource();
+    src.buffer = audioBuffer;
+
+    const env = audioCtx.createGain();
+    const now = audioCtx.currentTime;
+    const dur = Math.max(0.05, r.end - r.start);
+    // Longer fades + exponential ramp = no audible click/switch transient at high volume
+    const fadeIn = Math.min(0.035, dur / 3);   // 35ms attack ramp
+    const fadeOut = Math.min(0.045, dur / 3);  // 45ms release ramp
+    env.gain.setValueAtTime(0.0001, now);
+    env.gain.exponentialRampToValueAtTime(1, now + fadeIn);
+    env.gain.setValueAtTime(1, now + dur - fadeOut);
+    env.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+
+    src.connect(env);
+    const ins = setupAudioGraph.input;
+    env.connect(ins.dry);     // dry path
+    env.connect(ins.wetIn);   // -> low-pass -> convolver -> wetGain
+    env.connect(ins.delayIn); // -> delay -> feedback loop -> delayGain
+
+    src.start(now, r.start, dur);
+    activeSources.add(src);
+    src.onended = () => { activeSources.delete(src); src.disconnect(); env.disconnect(); };
+  }
+
+  async function load() {
+    setStatus('⏳ Audio file load হচ্ছে...');
+    try {
+      const resp = await fetch(AUDIO_URL);
+      if (!resp.ok) throw new Error(`File না পাওয়া (${resp.status})`);
+      const buf = await resp.arrayBuffer();
+      audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+      audioBuffer = await audioCtx.decodeAudioData(buf);
+      const detected = detectTones(audioBuffer);
+      const reconciled = reconcile(detected, audioBuffer);
+
+      setStatus('🧹 Background noise কমানো হচ্ছে...');
+      await new Promise(r => setTimeout(r, 30)); // let UI paint before heavy FFT pass
+      const cleaned = reduceNoise(audioBuffer, reconciled);
+
+      toneRanges = shuffle(reconciled);
+      enablePad();
+      const dur = audioBuffer.duration.toFixed(2);
+      const noiseTag = cleaned ? '🧹 cleaned' : '⚠️ noise sample missing';
+      setStatus(`✅ Ready — ${toneRanges.length} tone (${dur}s) · ${noiseTag} · 🎲 shuffled · detected: ${detected.length}`, 'ready');
+    } catch (err) {
+      console.error(err);
+      setStatus(`❌ Error: ${err.message}। ${AUDIO_URL} same folder এ আছে কি না check করুন। File:// দিয়ে না খুলে local server চালান।`, 'error');
+    }
+  }
+
+  function manualEqualSplit() {
+    if (!audioBuffer) return;
+    toneRanges = shuffle(equalSplit(audioBuffer));
+    setStatus(`⚙️ Manual mode: ১০ সমান ভাগ (${(audioBuffer.duration/10).toFixed(2)}s প্রতিটা), shuffled 🎲`, 'ready');
+  }
+
+  // Keyboard
+  document.addEventListener('keydown', (e) => {
+    if (e.repeat) return;
+    const idx = KEYS.indexOf(e.key);
+    if (idx >= 0) {
+      const btn = padEl.children[idx];
+      if (btn && !btn.disabled) { playTone(idx); flash(btn); }
+    }
+  });
+
+  document.getElementById('reverb').addEventListener('input', (e) => {
+    applyReverbAmount(parseInt(e.target.value, 10) / 100);
+  });
+  document.getElementById('delay').addEventListener('input', (e) => {
+    applyDelayAmount(parseInt(e.target.value, 10) / 100);
+  });
+
+  // ----- Space scene: parallax starfield + drifting asteroids -----
+  function buildStarfield() {
+    const host = document.getElementById('starfield');
+    if (!host) return;
+    host.innerHTML = '';
+    const isMobile = window.innerWidth < 600;
+    const layers = [
+      { count: isMobile ? 70 : 120, sizeMin: 0.5, sizeMax: 1.2, opMin: 0.18, opMax: 0.5,  parallax: 8  }, // deep
+      { count: isMobile ? 40 : 70,  sizeMin: 1.0, sizeMax: 2.0, opMin: 0.4,  opMax: 0.8,  parallax: 20 }, // mid
+      { count: isMobile ? 18 : 32,  sizeMin: 1.8, sizeMax: 3.2, opMin: 0.6,  opMax: 1.0,  parallax: 38 }, // near
+    ];
+    layers.forEach((L) => {
+      const layer = document.createElement('div');
+      layer.className = 'starfield';
+      layer.dataset.parallax = L.parallax;
+      for (let i = 0; i < L.count; i++) {
+        const s = document.createElement('span');
+        s.className = 'star';
+        const size = L.sizeMin + Math.random() * (L.sizeMax - L.sizeMin);
+        s.style.width = size + 'px';
+        s.style.height = size + 'px';
+        s.style.left = Math.random() * 100 + '%';
+        s.style.top = Math.random() * 100 + '%';
+        const op = L.opMin + Math.random() * (L.opMax - L.opMin);
+        s.style.setProperty('--baseOp', op);
+        s.style.setProperty('--dur', (1.8 + Math.random() * 4.2) + 's');
+        s.style.opacity = op;
+        s.style.animationDelay = (-Math.random() * 5) + 's';
+        // Subtle color tints — most white, some warm or cool
+        const tint = Math.random();
+        if (tint < 0.12) {
+          s.style.background = '#ffd9b3';
+          s.style.boxShadow = '0 0 ' + (size * 2) + 'px rgba(255, 200, 140, 0.7)';
+        } else if (tint < 0.22) {
+          s.style.background = '#b3d4ff';
+          s.style.boxShadow = '0 0 ' + (size * 2) + 'px rgba(150, 200, 255, 0.7)';
+        } else {
+          s.style.boxShadow = '0 0 ' + (size * 2) + 'px rgba(255, 255, 255, 0.55)';
+        }
+        layer.appendChild(s);
+      }
+      host.appendChild(layer);
+    });
+  }
+
+  // 4 hand-drawn asteroid silhouettes with referenced gradient defs.
+  const ASTEROID_SVG = [
+    `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+       <path d="M48,4 C68,7 86,17 92,38 C97,58 88,78 70,90 C52,98 28,94 14,78 C2,62 4,38 18,20 C28,8 38,3 48,4 Z" fill="url(#astGrad1)"/>
+       <ellipse cx="38" cy="42" rx="6" ry="4.2" fill="#0d0805" opacity="0.55"/>
+       <circle cx="62" cy="56" r="3.5" fill="#0d0805" opacity="0.5"/>
+       <circle cx="50" cy="72" r="4.5" fill="#0d0805" opacity="0.6"/>
+       <circle cx="72" cy="35" r="2.5" fill="#0d0805" opacity="0.45"/>
+     </svg>`,
+    `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+       <ellipse cx="50" cy="52" rx="42" ry="38" fill="url(#astGrad2)"/>
+       <circle cx="40" cy="40" r="5" fill="#0a0604" opacity="0.55"/>
+       <circle cx="68" cy="50" r="4" fill="#0a0604" opacity="0.5"/>
+       <circle cx="55" cy="70" r="6" fill="#0a0604" opacity="0.6"/>
+       <circle cx="30" cy="62" r="3" fill="#0a0604" opacity="0.4"/>
+     </svg>`,
+    `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+       <path d="M50,3 L72,12 L88,30 L94,52 L82,72 L65,88 L42,93 L20,82 L8,60 L6,38 L18,18 L34,6 Z" fill="url(#astGrad3)"/>
+       <path d="M30,38 L42,40 L40,48 L28,46 Z" fill="#0a0604" opacity="0.55"/>
+       <circle cx="60" cy="55" r="4" fill="#0a0604" opacity="0.55"/>
+       <circle cx="48" cy="72" r="5" fill="#0a0604" opacity="0.6"/>
+       <circle cx="74" cy="32" r="2" fill="#0a0604" opacity="0.4"/>
+     </svg>`,
+    `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+       <path d="M52,6 C72,10 90,24 90,46 C92,68 78,86 56,92 C32,96 12,80 10,58 C8,32 28,8 52,6 Z" fill="url(#astGrad4)"/>
+       <ellipse cx="42" cy="46" rx="7" ry="5" fill="#04060a" opacity="0.6"/>
+       <circle cx="64" cy="58" r="4" fill="#04060a" opacity="0.5"/>
+       <circle cx="38" cy="72" r="3" fill="#04060a" opacity="0.45"/>
+     </svg>`
+  ];
+
+  function spawnAsteroid(host) {
+    const a = document.createElement('div');
+    a.className = 'asteroid';
+    a.innerHTML = ASTEROID_SVG[Math.floor(Math.random() * ASTEROID_SVG.length)];
+
+    const top = 5 + Math.random() * 90;
+    const startLeft = -15 - Math.random() * 25;
+    const op = 0.45 + Math.random() * 0.35;
+    const sizePx = 24 + Math.random() * 56;     // 24–80px
+    const driftDur = 70 + Math.random() * 110;  // 70–180s slow drift
+    const spinDur = 18 + Math.random() * 40;    // 18–58s spin
+    const spinDir = Math.random() < 0.5 ? 'normal' : 'reverse';
+
+    a.style.top = top + 'vh';
+    a.style.left = startLeft + 'vw';
+    a.style.width = sizePx + 'px';
+    a.style.height = sizePx + 'px';
+    a.style.setProperty('--op', op);
+    a.style.opacity = 0;
+    a.style.animationDuration = driftDur + 's';
+    a.style.animationDelay = (-Math.random() * driftDur) + 's';
+    const svg = a.querySelector('svg');
+    if (svg) {
+      svg.style.animationDuration = spinDur + 's';
+      svg.style.animationDirection = spinDir;
+    }
+    host.appendChild(a);
+    setTimeout(() => a.remove(), driftDur * 1000);
+  }
+  function buildAsteroidsRespawn() {
+    const host = document.getElementById('asteroids');
+    if (!host) return;
+    return setInterval(() => {
+      const cap = window.innerWidth < 600 ? 4 : 7;
+      if (host.childElementCount < cap) spawnAsteroid(host);
+    }, 9000 + Math.random() * 6000);
+  }
+
+  // Shooting stars — occasional streaks
+  function spawnShooter() {
+    const host = document.getElementById('shooters');
+    if (!host) return;
+    const s = document.createElement('div');
+    s.className = 'shooter';
+    s.style.top = (Math.random() * 55) + '%';
+    s.style.right = (Math.random() * 25) + '%';
+    host.appendChild(s);
+    setTimeout(() => s.remove(), 1600);
+  }
+  function startShooters() {
+    const tick = () => {
+      if (Math.random() < 0.6) spawnShooter();
+      setTimeout(tick, 4500 + Math.random() * 8500);
+    };
+    setTimeout(tick, 3000);
+  }
+  function buildAsteroids() {
+    const host = document.getElementById('asteroids');
+    if (!host) return;
+    const initial = window.innerWidth < 600 ? 3 : 6;
+    for (let i = 0; i < initial; i++) spawnAsteroid(host);
+    buildAsteroidsRespawn();
+  }
+
+  // Cursor parallax for star layers (and gentle nebula tilt)
+  let parallaxX = 0, parallaxY = 0, targetX = 0, targetY = 0;
+  function onPointer(e) {
+    const x = e.touches ? e.touches[0].clientX : e.clientX;
+    const y = e.touches ? e.touches[0].clientY : e.clientY;
+    targetX = (x / window.innerWidth - 0.5);
+    targetY = (y / window.innerHeight - 0.5);
+  }
+  window.addEventListener('mousemove', onPointer, { passive: true });
+  window.addEventListener('touchmove', onPointer, { passive: true });
+
+  function parallaxTick() {
+    parallaxX += (targetX - parallaxX) * 0.06;
+    parallaxY += (targetY - parallaxY) * 0.06;
+    document.querySelectorAll('.starfield').forEach(layer => {
+      const p = parseFloat(layer.dataset.parallax || 10);
+      layer.style.transform = `translate(${(-parallaxX * p).toFixed(2)}px, ${(-parallaxY * p).toFixed(2)}px)`;
+    });
+    requestAnimationFrame(parallaxTick);
+  }
+
+  buildStarfield();
+  buildAsteroids();
+  startShooters();
+  requestAnimationFrame(parallaxTick);
+  window.addEventListener('resize', () => { buildStarfield(); });
+
+  buildPad();
+  // First user interaction unlocks audio context on most browsers
+  document.body.addEventListener('click', () => {
+    if (!audioCtx) {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+  }, { once: true });
+
+  load();
+})();
+</script>
+</body>
+</html>
