@@ -1,0 +1,30 @@
+{
+  "headers": [
+    {
+      "source": "/jadu10.WAV",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" },
+        { "key": "Content-Type", "value": "audio/wav" }
+      ]
+    },
+    {
+      "source": "/jadu.m4a",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" },
+        { "key": "Content-Type", "value": "audio/mp4" }
+      ]
+    },
+    {
+      "source": "/photoa/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    },
+    {
+      "source": "/index.html",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
+      ]
+    }
+  ]
+}
