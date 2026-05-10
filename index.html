@@ -276,9 +276,9 @@
 
   .pad {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 16px;
-    max-width: 720px;
+    max-width: 600px;
     width: 100%;
     position: relative;
     z-index: 3;
@@ -455,18 +455,18 @@
   }
   #status.error { display: block; }
 
-  /* Mobile: 2 column × 5 row tall (lomba lombi) layout */
+  /* Mobile: 2 column × 4 row tall (lomba lombi) layout */
   @media (max-width: 600px) {
     body { padding: 10px; justify-content: center; }
     .title { font-size: 2rem; margin-bottom: 12px; }
     .pad {
       grid-template-columns: repeat(2, 1fr);
       gap: 8px;
-      /* Width derived from available height (minus title + controls + credit) */
-      max-width: min(58vw, calc((100vh - 210px) * 2 / 5 + 8px));
+      /* Width derived from available height: 4 rows of square buttons */
+      max-width: min(64vw, calc((100vh - 210px) / 2 + 8px));
     }
     .key { border-radius: 22%; }
-    .key .glyph { font-size: 1.9rem; }
+    .key .glyph { font-size: 2.1rem; }
     .controls { margin-top: 14px; gap: 8px; }
     .reverb-row { padding: 5px 10px; border-radius: 22px; }
     .reverb-row input[type=range] { width: 100px; }
@@ -474,18 +474,18 @@
   }
   @media (max-width: 400px) {
     .title { font-size: 1.7rem; margin-bottom: 10px; }
-    .pad { gap: 6px; max-width: min(54vw, calc((100vh - 200px) * 2 / 5 + 6px)); }
-    .key .glyph { font-size: 1.55rem; }
+    .pad { gap: 6px; max-width: min(60vw, calc((100vh - 200px) / 2 + 6px)); }
+    .key .glyph { font-size: 1.7rem; }
     .reverb-row input[type=range] { width: 80px; }
   }
   @media (orientation: landscape) and (max-height: 520px) {
-    /* Landscape phones: revert to wide grid since vertical space is tight */
+    /* Landscape phones: 4-wide grid since vertical space is tight */
     .title { font-size: 1.4rem; margin-bottom: 6px; }
     .pad {
-      grid-template-columns: repeat(5, 1fr);
-      max-width: min(720px, 80vh);
+      grid-template-columns: repeat(4, 1fr);
+      max-width: min(600px, 90vh);
     }
-    .key .glyph { font-size: 1.3rem; }
+    .key .glyph { font-size: 1.4rem; }
     .controls { margin-top: 6px; }
     .credit { font-size: 0.62rem; right: 8px; bottom: 6px; }
   }
@@ -548,10 +548,11 @@
 
 <script>
 (function () {
-  const AUDIO_URL = 'jadu10.WAV';
-  const NUM_TONES = 10;
-  const KEYS = ['1','2','3','4','5','6','7','8','9','0'];
-  const GLYPHS = ['𓂀','𓋹','𓊽','𓅓','𓆣','𓃭','𓀀','𓄿','𓉐','𓇋'];
+  const AUDIO_URL = 'bvbgbg.mp4';
+  const NUM_BUTTONS = 8;       // total keys on the pad
+  const NUM_TONES = 4;         // distinct tones inside the source file (will be duplicated across buttons)
+  const KEYS = ['1','2','3','4','5','6','7','8'];
+  const GLYPHS = ['𓂀','𓋹','𓊽','𓅓','𓆣','𓃭','𓀀','𓄿'];
 
   const statusEl = document.getElementById('status');
   const padEl = document.getElementById('pad');
@@ -1000,17 +1001,22 @@
       audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
       audioBuffer = await audioCtx.decodeAudioData(buf);
       const detected = detectTones(audioBuffer);
-      const reconciled = reconcile(detected, audioBuffer);
+      const reconciled = reconcile(detected, audioBuffer);     // up to NUM_TONES (4) unique tones
 
       setStatus('🧹 Background noise কমানো হচ্ছে...');
-      await new Promise(r => setTimeout(r, 30)); // let UI paint before heavy FFT pass
+      await new Promise(r => setTimeout(r, 30));
       const cleaned = reduceNoise(audioBuffer, reconciled);
 
-      toneRanges = shuffle(reconciled);
+      // Fill all NUM_BUTTONS by duplicating tones (each tone appears ceil(buttons/tones) times)
+      const expanded = [];
+      for (let i = 0; i < NUM_BUTTONS; i++) {
+        expanded.push(reconciled[i % reconciled.length]);
+      }
+      toneRanges = shuffle(expanded);
       enablePad();
       const dur = audioBuffer.duration.toFixed(2);
       const noiseTag = cleaned ? '🧹 cleaned' : '⚠️ noise sample missing';
-      setStatus(`✅ Ready — ${toneRanges.length} tone (${dur}s) · ${noiseTag} · 🎲 shuffled · detected: ${detected.length}`, 'ready');
+      setStatus(`✅ Ready — ${reconciled.length} tones × ${NUM_BUTTONS} buttons (${dur}s) · ${noiseTag} · 🎲 shuffled · detected: ${detected.length}`, 'ready');
     } catch (err) {
       console.error(err);
       setStatus(`❌ Error: ${err.message}। ${AUDIO_URL} same folder এ আছে কি না check করুন। File:// দিয়ে না খুলে local server চালান।`, 'error');

@@ -12,6 +12,7 @@ const MIME = {
   '.css':  'text/css; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
   '.m4a':  'audio/mp4',
+  '.mp4':  'video/mp4',
   '.mp3':  'audio/mpeg',
   '.wav':  'audio/wav',
   '.png':  'image/png',
