@@ -1,0 +1,8 @@
+node_modules
+.DS_Store
+.vercel
+_gen_og.py
+
+# Raw recording session folders (keep them off the deployed site)
+0518/
+0518(1)/

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="theme-color" content="#02020a" />
+<meta name="robots" content="noindex" />
+<title>Lost in the stars — 404 · Jadoo</title>
+<link rel="icon" type="image/png" href="photoa/fAV.png" />
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    background: #02020a;
+    color: #fff;
+    font-family: 'Georgia', 'Segoe UI Historic', serif;
+    min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+    overflow: hidden;
+    position: relative;
+  }
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background:
+      radial-gradient(ellipse 60% 40% at 30% 35%, rgba(60, 30, 120, 0.35) 0%, transparent 70%),
+      radial-gradient(ellipse 50% 40% at 75% 60%, rgba(30, 60, 160, 0.28) 0%, transparent 70%);
+    z-index: 0;
+  }
+  body::after {
+    content: '';
+    position: fixed; inset: 0;
+    background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.8) 100%);
+    z-index: 1;
+    pointer-events: none;
+  }
+  .star {
+    position: fixed;
+    width: 2px; height: 2px;
+    background: #fff;
+    border-radius: 50%;
+    box-shadow: 0 0 4px #fff;
+    z-index: 0;
+    opacity: 0.6;
+    animation: tw 3s ease-in-out infinite;
+  }
+  @keyframes tw { 50% { opacity: 0.2; } }
+  .wrap { position: relative; z-index: 2; text-align: center; max-width: 520px; }
+  .glyph {
+    font-size: 5rem;
+    font-family: 'Segoe UI Historic', 'Noto Sans Egyptian Hieroglyphs', serif;
+    color: #ffd9a0;
+    text-shadow: 0 0 18px rgba(255, 180, 100, 0.6), 0 0 38px rgba(255, 100, 60, 0.35);
+    margin-bottom: 12px;
+    animation: float 4s ease-in-out infinite;
+  }
+  @keyframes float { 50% { transform: translateY(-6px); } }
+  h1 {
+    font-style: italic;
+    font-size: clamp(2.4rem, 7vw, 4rem);
+    letter-spacing: 0.04em;
+    background: linear-gradient(95deg, #b3d4ff, #fff, #c9b4ff, #ffd9b3, #b3d4ff);
+    background-size: 220% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: shine 8s linear infinite;
+    margin-bottom: 18px;
+  }
+  @keyframes shine { to { background-position: 220% 50%; } }
+  p { color: rgba(220, 220, 240, 0.78); font-size: 1.08rem; line-height: 1.55; margin-bottom: 28px; }
+  a.back {
+    display: inline-block;
+    padding: 12px 26px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 180, 100, 0.4);
+    background: rgba(40, 18, 5, 0.6);
+    color: #ffd9a0;
+    text-decoration: none;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    font-size: 0.82rem;
+    transition: background 0.2s, transform 0.2s;
+  }
+  a.back:hover { background: rgba(80, 40, 10, 0.8); transform: translateY(-2px); }
+</style>
+</head>
+<body>
+  <script>
+    // Sprinkle some stars before paint
+    (function(){
+      const N = 40;
+      for (let i = 0; i < N; i++) {
+        const s = document.createElement('div');
+        s.className = 'star';
+        s.style.left = Math.random()*100 + 'vw';
+        s.style.top = Math.random()*100 + 'vh';
+        s.style.animationDelay = (-Math.random()*3) + 's';
+        document.body.appendChild(s);
+      }
+    })();
+  </script>
+  <div class="wrap">
+    <div class="glyph">𓂀</div>
+    <h1>Lost in the stars</h1>
+    <p>This page drifted past the asteroid belt. The melody's still where you left it.</p>
+    <a class="back" href="/">← Back to Jadoo</a>
+  </div>
+</body>
+</html>
